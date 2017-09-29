@@ -1,5 +1,5 @@
 {
-    "name": "flownative/resourcetools",
+    "name": "flownative/resource-tools",
     "type": "neos-package",
     "description": "Resource import and export and more tools for Flow",
     "license": "MIT",
