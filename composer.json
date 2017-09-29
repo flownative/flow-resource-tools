@@ -65,7 +65,8 @@
             "Neos.Form-20161124205254",
             "Neos.Party-20161124225257",
             "Neos.Setup-20161124230842",
-            "Neos.NodeTypes-20161125002300"
+            "Neos.NodeTypes-20161125002300",
+            "Neos.Neos-20161125002322"
         ]
     }
 }
