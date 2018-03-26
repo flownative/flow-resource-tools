@@ -99,4 +99,23 @@ final class ResourceToolsCommandController extends CommandController
             }
         }
     }
+
+    /**
+     * Import the given file as resource in Neos.
+     *
+     * @param string $source Can be anything PHP can open (filepath, URL, data string, etc.)
+     * @param string $filename The filename (if empty string it will try to fetch from stream or leave empty)
+     * @param string $collection
+     * @throws \Neos\Flow\ResourceManagement\Exception
+     */
+    public function importFileCommand(string $source, string $filename, string $collection = 'persistent')
+    {
+        $fileHandler = fopen($source, 'r');
+        $resource = $this->resourceManager->importResource($fileHandler, $collection);
+        if ($filename !== '') {
+            $resource->setFilename($filename);
+        }
+
+        $this->outputLine('Imported file as resource "%s"', [$resource->getSha1()]);
+    }
 }
