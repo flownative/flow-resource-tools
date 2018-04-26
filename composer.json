@@ -13,7 +13,7 @@
         "email": "support@flownative.com"
     },
     "require": {
-        "neos/flow": "~4.0 || dev-master"
+        "neos/flow": "^4.0 || ^5.0 || dev-master"
     },
     "autoload": {
         "psr-4": {
@@ -66,10 +66,12 @@
             "Neos.Party-20161124225257",
             "Neos.Setup-20161124230842",
             "Neos.NodeTypes-20161125002300",
+            "Neos.SiteKickstarter-20161125002311",
             "Neos.Neos-20161125002322",
             "Neos.ContentRepository-20161125012000",
             "Neos.Fusion-20161125013710",
             "Neos.Setup-20161125014759",
+            "Neos.SiteKickstarter-20161125095901",
             "Neos.Fusion-20161125104701",
             "Neos.NodeTypes-20161125104800",
             "Neos.Neos-20161125104802",
@@ -91,7 +93,10 @@
             "Neos.Fusion-20170120013047",
             "Neos.Flow-20170125103800",
             "Neos.Seo-20170127154600",
-            "Neos.Flow-20170127183102"
+            "Neos.Flow-20170127183102",
+            "Neos.Fusion-20180211175500",
+            "Neos.Fusion-20180211184832",
+            "Neos.Flow-20180415105700"
         ]
     }
 }
