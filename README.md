@@ -23,3 +23,84 @@ into the dependencies of your Flow or Neos distribution:
 ## Usage
 
 See `./flow help` 
+
+# Resource Targets and Storages
+
+#### NonPublishingProxyStorage
+
+A special wrapper for another storage that prevents automatic publishing
+of any resources imported to this storage. Note that you need to take 
+care of publishing resources in your application, they will not be
+automatically published if you ask for the public URI. So never use
+this as default storage, for example for NeosCMS as it will not be able
+to work with unpublished resources.
+Note that running `./flow resource:publish` will publish resources added
+to a collection with this storage so you should avoid that.
+
+Configuration options:
+
+* `storageClass` - Sets the class name for the actual storage that will store resources.
+
+* `storageOptions` - Configures the options for the storage class that actually stores resources.
+
+Example configuration:
+```yaml
+Neos:
+  Flow:
+    resource:
+      storages:
+        specialNonPublishedStorage:
+          storage: 'Flownative\ResourceTools\ResourceManagement\NonPublishingProxyStorage'
+          storageOptions:
+            storageClass: 'Neos\Flow\ResourceManagement\Storage\WritableFileSystemStorage'
+            storageOptions:
+              path: '%FLOW_PATH_DATA%Persistent/Resources/'
+
+``` 
+
+#### SaltedFileSystemSymlinkTarget
+
+This target works just like the Flow `\Neos\Flow\ResourceManagement\Target\FileSystemSymlinkTarget`
+but it generates a salted hash that cannot be guessed by knowing the file.
+This is useful if you let anonymous users upload resources to your system but don't want them
+to be able to guess the public URI for security reasons.
+
+Configuration options:
+
+All the options of the Flow FileSystemSymlinkTarget
+
+* `salt` - optional (will fallback to Flow system encryption key) - the salt to hash URIs with.
+If you run multiple servers make sure to set this to the same string on every server instead of
+relying on the encryption key. Ideally set this to a long randomly generated string.
+
+Example configuration:
+```yaml
+Neos:
+  Flow:
+    resource:
+      targets:
+        localWebDirectoryPersistentResourcesTarget:
+          target: 'Flownative\ResourceTools\ResourceManagement\SaltedFileSystemSymlinkTarget'
+          targetOptions:
+            subdivideHashPathSegment: true
+            # Optional salt
+            salt: 'foobar'
+``` 
+
+#### DummyTarget
+
+This target prevents any publication by simply doing nothing. For all intends and purposes
+it looks to Flow like a regular target, but it will not actually make resources public
+and requesting a URI for one will always return an empty string. There are no configuration
+options:
+
+Example configuration:
+```yaml
+Neos:
+  Flow:
+    resource:
+      targets:
+        dummyTarget:
+          target: '\Flownative\ResourceTools\ResourceManagement\DummyTarget'
+          targetOptions: []
+``` 
