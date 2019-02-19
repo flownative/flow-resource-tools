@@ -4,8 +4,10 @@ namespace Flownative\ResourceTools\Command;
 
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
+use Neos\Flow\ResourceManagement\Exception;
 use Neos\Flow\ResourceManagement\ResourceManager;
 use Neos\Flow\ResourceManagement\Storage\StorageObject;
+use Neos\Utility\Exception\FilesException;
 use Neos\Utility\Files;
 
 final class ResourceToolsCommandController extends CommandController
@@ -25,12 +27,13 @@ final class ResourceToolsCommandController extends CommandController
      * @param string $targetPath The path where the resource files should be exported to.
      * @param bool $emptyTargetPath If set, all files in the target path will be deleted before the export runs
      * @param string $collection Name of the resource collection to export. Default: "persistent"
+     * @throws FilesException
      */
-    public function exportCommand(string $targetPath, bool $emptyTargetPath = false, $collection = 'persistent')
+    public function exportCommand(string $targetPath, bool $emptyTargetPath = false, $collection = 'persistent'): void
     {
         if (!is_dir($targetPath)) {
             $this->outputLine('The target path does not exist.');
-            $this->quit(1);
+            exit(1);
         }
         $targetPath = realpath($targetPath) . '/';
 
@@ -70,11 +73,11 @@ final class ResourceToolsCommandController extends CommandController
      * @param string $sourcePath The path where the resource files are located
      * @param string $collection Name of the resource collection to match with. Default: "persistent"
      */
-    public function matchCommand(string $sourcePath, string $collection = 'persistent')
+    public function matchCommand(string $sourcePath, string $collection = 'persistent'): void
     {
         if (!is_dir($sourcePath)) {
             $this->outputLine('The source path does not exist.');
-            $this->quit(1);
+            exit(1);
         }
 
         $sourcePath = rtrim($sourcePath,'/') . '/';
@@ -89,8 +92,12 @@ final class ResourceToolsCommandController extends CommandController
             if ($stream === false) {
                 if (file_exists($sourcePath . $object->getSha1())) {
                     sha1_file($sourcePath . $object->getSha1());
-                    $persistentCollection->importResource(fopen($sourcePath . $object->getSha1(), 'r'));
-                    $this->outputLine('<success>imported</success>  %s %s', [$object->getSha1(), $object->getFilename()]);
+                    try {
+                        $persistentCollection->importResource(fopen($sourcePath . $object->getSha1(), 'r'));
+                        $this->outputLine('<success>imported</success>  %s %s', [$object->getSha1(), $object->getFilename()]);
+                    } catch (Exception $e) {
+                        $this->outputLine('<error>failed</error>  %s %s %s', [$object->getSha1(), $object->getFilename(), $e->getMessage()]);
+                    }
                 } else {
                     $this->outputLine('<error>missing </error>  %s %s', [$object->getSha1(), $object->getFilename()]);
                 }
@@ -106,16 +113,20 @@ final class ResourceToolsCommandController extends CommandController
      * @param string $source Can be anything PHP can open (filepath, URL, data string, etc.)
      * @param string $filename The filename (if empty string it will try to fetch from stream or leave empty)
      * @param string $collection
-     * @throws \Neos\Flow\ResourceManagement\Exception
      */
-    public function importFileCommand(string $source, string $filename, string $collection = 'persistent')
+    public function importFileCommand(string $source, string $filename, string $collection = 'persistent'): void
     {
-        $fileHandler = fopen($source, 'r');
-        $resource = $this->resourceManager->importResource($fileHandler, $collection);
-        if ($filename !== '') {
-            $resource->setFilename($filename);
-        }
+        $fileHandler = fopen($source, 'rb');
+        try {
+            $resource = $this->resourceManager->importResource($fileHandler, $collection);
+            if ($filename !== '') {
+                $resource->setFilename($filename);
+            }
 
-        $this->outputLine('Imported file as resource "%s"', [$resource->getSha1()]);
+            $this->outputLine('Imported file as resource "%s"', [$resource->getSha1()]);
+        } catch (Exception $e) {
+            $this->outputLine('<error>Failed importing file</error>  %s', [$e->getMessage()]);
+            exit(1);
+        }
     }
 }
