@@ -4,14 +4,15 @@
 
 # Resource Import and Export for Flow Framework and Neos CMS
 
-Flownative Resource Exchange is a simple command line tool which allows for
-exporting and importing of Flow resources, independently from the resource storage
-being used.
+Flownative Resource Tools is a package which provides
 
+- a simple command line tool which allows for exporting and importing of Flow resources,
+  independently from the resource storage being used
+- multiple resource targets and storages for special purposes
 
 ## Installation
 
-The Flownative Resource Exchange package is installed as a regular Flow package
+The Flownative Resource Tools package is installed as a regular Flow package
 via Composer. For your existing project, simply include `flownative/resource-tools
 into the dependencies of your Flow or Neos distribution:
 
