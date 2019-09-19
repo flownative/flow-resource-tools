@@ -13,7 +13,7 @@
         "email": "support@flownative.com"
     },
     "require": {
-        "neos/flow": "^4.0 || ^5.0 || dev-master"
+        "neos/flow": "^4.0 || ^5.0 || ^6.0 || dev-master"
     },
     "autoload": {
         "psr-4": {
