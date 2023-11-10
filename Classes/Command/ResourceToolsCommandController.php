@@ -4,20 +4,48 @@ namespace Flownative\ResourceTools\Command;
 
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
+use Neos\Flow\ObjectManagement\ObjectManagerInterface;
+use Neos\Flow\Persistence\Doctrine\PersistenceManager;
+use Neos\Flow\Reflection\ReflectionService;
 use Neos\Flow\ResourceManagement\Exception;
 use Neos\Flow\ResourceManagement\ResourceManager;
-use Neos\Flow\ResourceManagement\Storage\StorageObject;
+use Neos\Media\Domain\Model\AssetInterface;
+use Neos\Media\Domain\Repository\AssetRepository;
+use Neos\Media\Domain\Strategy\AssetUsageStrategyInterface;
 use Neos\Utility\Exception\FilesException;
 use Neos\Utility\Files;
 
 final class ResourceToolsCommandController extends CommandController
 {
-
     /**
      * @Flow\Inject
      * @var ResourceManager
      */
     protected $resourceManager;
+
+    /**
+     * @Flow\Inject
+     * @var PersistenceManager
+     */
+    protected $persistenceManager;
+
+    /**
+     * @Flow\Inject
+     * @var ReflectionService
+     */
+    protected $reflectionService;
+
+    /**
+     * @Flow\Inject
+     * @var ObjectManagerInterface
+     */
+    protected $objectManager;
+
+    /**
+     * @Flow\Inject
+     * @var AssetRepository
+     */
+    protected $assetRepository;
 
     /**
      * Export resources to path
@@ -171,6 +199,66 @@ final class ResourceToolsCommandController extends CommandController
 
             }
         }
+    }
+
+    /**
+     * Delete unused assets, their resources records, and their blobs.
+     *
+     * Assets are considered unused if they are not having any use recorded
+     * by any of the installed AssetUsageStrategyInterface implementations.
+     *
+     * @param bool $dryRun Disable to really delete resources and blobs
+     */
+    public function removeUnusedAssetsCommand(bool $dryRun = true): void
+    {
+        $numberOfDeletedAssets = 0;
+        $numberOfKeptAssets = 0;
+        $iterator = $this->assetRepository->findAllIterator();
+        /** @var AssetInterface $asset */
+        foreach ($this->assetRepository->iterate($iterator) as $asset) {
+            $assetIdentifier = $this->persistenceManager->getIdentifierByObject($asset);
+            if ($this->isAssetInUse($asset) === false) {
+                $numberOfDeletedAssets++;
+                if ($dryRun === false) {
+                    $this->assetRepository->remove($asset);
+                }
+                $this->outputLine(
+                    '<error>deleted</error> %s %s',
+                    [
+                        $assetIdentifier,
+                        $asset->getTitle() ?: $asset->getResource()->getFilename()
+                    ]
+                );
+            } else {
+                $numberOfKeptAssets++;
+                $this->outputLine(
+                    '<success>kept</success>    %s %s',
+                    [
+                        $assetIdentifier,
+                        $asset->getTitle() ?: $asset->getResource()->getFilename()
+                    ]
+                );
+            }
+        }
+
+        $this->outputLine();
+        $this->outputLine('<b>Summary</b>: %u assets <error>deleted</error> and %u assets <success>kept</success>', [$numberOfDeletedAssets, $numberOfKeptAssets]);
+    }
+
+    private function isAssetInUse(AssetInterface $asset): bool
+    {
+        $strategies = [];
+        foreach ($this->reflectionService->getAllImplementationClassNamesForInterface(AssetUsageStrategyInterface::class) as $usageStrategyImplementationClassName) {
+            $strategies[] = $this->objectManager->get($usageStrategyImplementationClassName);
+        }
+
+        $isInUse = true;
+        /** @var AssetUsageStrategyInterface $strategy */
+        foreach ($strategies as $strategy) {
+            $isInUse = $isInUse && $strategy->isInUse($asset);
+        }
+
+        return $isInUse;
     }
 
     private function isFileOldEnough(string $file, int $minimumAge): bool
