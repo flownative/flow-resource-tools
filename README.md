@@ -104,3 +104,8 @@ Neos:
           target: '\Flownative\ResourceTools\ResourceManagement\DummyTarget'
           targetOptions: []
 ``` 
+
+## Credits
+
+- This has been partly developed based on things our customers needed, so they paid some of it.
+- Inspiration also taken from https://github.com/networkteam/Networkteam.OrphanedResources
