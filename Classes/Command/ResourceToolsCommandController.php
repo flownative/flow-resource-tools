@@ -29,28 +29,33 @@ final class ResourceToolsCommandController extends CommandController
      * @param string $collection Name of the resource collection to export. Default: "persistent"
      * @throws FilesException
      */
-    public function exportCommand(string $targetPath, bool $emptyTargetPath = false, $collection = 'persistent'): void
+    public function exportCommand(string $targetPath, bool $emptyTargetPath = false, string $collection = 'persistent'): void
     {
         if (!is_dir($targetPath)) {
             $this->outputLine('The target path does not exist.');
             exit(1);
         }
+
+        $collectionInstance = $this->resourceManager->getCollection($collection);
+        if ($collectionInstance === null) {
+            $this->outputLine('<error>Collection %s not found</error>', [$collection]);
+            $this->quit(1);
+        }
+
         $targetPath = realpath($targetPath) . '/';
 
         if ($emptyTargetPath) {
             $files = Files::readDirectoryRecursively($targetPath);
 
             if (count($files) && $this->output->askConfirmation(sprintf('Are you sure you want to delete %s files in %s ?', count($files), $targetPath), false)) {
-                $this->outputLine('<b>Removing all files in %s ...</b>' . chr(10), [$targetPath]);
+                $this->outputLine('<b>Removing all files in %s ...</b>', [$targetPath]);
                 Files::emptyDirectoryRecursively($targetPath);
             }
         }
 
-        $this->outputLine('<b>Exporting resources to %s ...</b>' . chr(10), [$targetPath]);
+        $this->outputLine('<b>Exporting resources to %s ...</b>', [$targetPath]);
 
-        $persistentCollection = $this->resourceManager->getCollection($collection);
-        foreach ($persistentCollection->getObjects() as $object) {
-            /** @var StorageObject $object */
+        foreach ($collectionInstance->getObjects() as $object) {
             $stream = $object->getStream();
             if ($stream === false) {
                 $this->outputLine('<error>missing</error>  %s %s', [$object->getSha1(), $object->getFilename()]);
