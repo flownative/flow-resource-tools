@@ -137,4 +137,49 @@ final class ResourceToolsCommandController extends CommandController
             $this->quit(1);
         }
     }
+
+    /**
+     * Delete orphaned blobs (files) in Data/Persistent/Resources.
+     *
+     * Orphans are blobs not attached to a persistent resources record in the database.
+     *
+     * @param bool $dryRun Disable to really delete blobs
+     * @param int $minimumAge Ignore files younger than x seconds. Default: 3600
+     * @return void
+     * @throws FilesException
+     * @todo Enhance to work on arbitrary storages
+     */
+    public function removeOrphanedBlobsCommand(bool $dryRun = true, int $minimumAge = 3600): void
+    {
+        $basePath = FLOW_PATH_DATA . 'Persistent/Resources/';
+        foreach (Files::getRecursiveDirectoryGenerator($basePath) as $file) {
+            if (
+                is_file($file) &&
+                $this->isFileOldEnough($file, $minimumAge) &&
+                // assume the filename is the SHA1
+                $this->isFileNotAttachedToAResourceInDatabase(basename($file))
+            ) {
+
+                if ($dryRun === false) {
+                    if (Files::unlink($file)) {
+                        $this->outputLine('<success>deleted</success> %s', [str_replace(FLOW_PATH_ROOT, '', $file)]);
+                    } else {
+                        $this->outputLine('<error>failed</error>  %s', [str_replace(FLOW_PATH_ROOT, '', $file)]);
+                    }
+                    Files::removeEmptyDirectoriesOnPath(dirname($file), $basePath);
+                }
+
+            }
+        }
+    }
+
+    private function isFileOldEnough(string $file, int $minimumAge): bool
+    {
+        return filemtime($file) < time() - $minimumAge;
+    }
+
+    private function isFileNotAttachedToAResourceInDatabase(string $sha1): bool
+    {
+        return $this->resourceManager->getResourceBySha1($sha1) === null;
+    }
 }
