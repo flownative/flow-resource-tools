@@ -33,7 +33,7 @@ final class ResourceToolsCommandController extends CommandController
     {
         if (!is_dir($targetPath)) {
             $this->outputLine('The target path does not exist.');
-            exit(1);
+            $this->quit(1);
         }
 
         $collectionInstance = $this->resourceManager->getCollection($collection);
@@ -82,7 +82,7 @@ final class ResourceToolsCommandController extends CommandController
     {
         if (!is_dir($sourcePath)) {
             $this->outputLine('<error>The source path does not exist.</error>');
-            exit(1);
+            $this->quit(1);
         }
 
         $collectionInstance = $this->resourceManager->getCollection($collection);
@@ -134,7 +134,7 @@ final class ResourceToolsCommandController extends CommandController
             $this->outputLine('Imported file as resource "%s"', [$resource->getSha1()]);
         } catch (Exception $e) {
             $this->outputLine('<error>Failed importing file</error>  %s', [$e->getMessage()]);
-            exit(1);
+            $this->quit(1);
         }
     }
 }
