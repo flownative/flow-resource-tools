@@ -81,24 +81,27 @@ final class ResourceToolsCommandController extends CommandController
     public function matchCommand(string $sourcePath, string $collection = 'persistent'): void
     {
         if (!is_dir($sourcePath)) {
-            $this->outputLine('The source path does not exist.');
+            $this->outputLine('<error>The source path does not exist.</error>');
             exit(1);
         }
 
-        $sourcePath = rtrim($sourcePath,'/') . '/';
+        $collectionInstance = $this->resourceManager->getCollection($collection);
+        if ($collectionInstance === null) {
+            $this->outputLine('<error>Collection %s not found</error>', [$collection]);
+            $this->quit(1);
+        }
+
+        $sourcePath = rtrim($sourcePath, '/') . '/';
 
         $this->outputLine('<success>Matching resources with files in %s ...</success>' . chr(10), [$sourcePath]);
 
-        $persistentCollection = $this->resourceManager->getCollection($collection);
-        foreach ($persistentCollection->getObjects() as $object) {
-            /** @var StorageObject $object */
-
+        foreach ($collectionInstance->getObjects() as $object) {
             $stream = $object->getStream();
             if ($stream === false) {
                 if (file_exists($sourcePath . $object->getSha1())) {
                     sha1_file($sourcePath . $object->getSha1());
                     try {
-                        $persistentCollection->importResource(fopen($sourcePath . $object->getSha1(), 'r'));
+                        $collectionInstance->importResource(fopen($sourcePath . $object->getSha1(), 'r'));
                         $this->outputLine('<success>imported</success>  %s %s', [$object->getSha1(), $object->getFilename()]);
                     } catch (Exception $e) {
                         $this->outputLine('<error>failed</error>  %s %s %s', [$object->getSha1(), $object->getFilename(), $e->getMessage()]);
