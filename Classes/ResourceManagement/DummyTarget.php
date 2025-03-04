@@ -83,4 +83,8 @@ class DummyTarget implements TargetInterface
     {
         return '';
     }
+
+    public function onPublish(\Closure $callback): void
+    {
+    }
 }
